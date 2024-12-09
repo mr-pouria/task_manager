@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>ir.tasktop</groupId>
 	<artifactId>taskTop</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>taskTop</name>
 	<description>The product that you can manage your todo&apos;s.</description>
 	<url/>

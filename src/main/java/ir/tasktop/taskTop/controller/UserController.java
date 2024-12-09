@@ -31,4 +31,5 @@ public class UserController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginDto loginDto , BindingResult bindingResult) {
         return userService.login(loginDto , bindingResult);
     }
+
 }

@@ -11,7 +11,6 @@ import java.util.Map;
 @Component
 public class ResponseHandler {
 
-
     public ResponseEntity<?> responseBack(Object Data , String msg , String errMsg , HttpStatus code) {
         Map<String, Object> map = new HashMap<>();
         map.put("data", Data);

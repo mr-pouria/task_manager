@@ -1,6 +1,7 @@
 package ir.tasktop.taskTop.security;
 
 import ir.tasktop.taskTop.service.CustomUserDetailService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -26,24 +28,28 @@ public class SecurityConfig {
     @Autowired
     AuthTokenFilter authTokenFilter;
 
+
+
     @Autowired
     CustomUserDetailService customUserDetailService;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
+
                 .addFilterBefore(authTokenFilter , UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/login","/api/register")
                         .permitAll()
-                        .requestMatchers("/api/test").hasRole("ADMIN")
+                        .requestMatchers("/api/public/**")
+                        .permitAll()
+                        .requestMatchers( "/api/releaseNewFeature").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
-
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                .authenticationProvider(authenticationProvider())
                 .build();
 
     }
@@ -62,8 +68,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthenticationManager authenticationManager() {
-        return new ProviderManager(authenticationProvider());
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
 

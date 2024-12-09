@@ -47,7 +47,7 @@ public class UserService {
             return responseHandler.responseBack(null, null, result.getFieldError().getDefaultMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         if (userRepo.existsByUsername(registerDto.getUsername())) {
-            return responseHandler.responseBack(null, null, Messages.UALREADYEXISTS.toString(), HttpStatus.BAD_REQUEST);
+            return responseHandler.responseBack(null, null, Messages.U_ALREADYEXISTS.toString(), HttpStatus.BAD_REQUEST);
         }
         User user = new User();
         user.setUsername(registerDto.getUsername());
@@ -72,7 +72,7 @@ public class UserService {
         }
         try {
             if (!userRepo.existsByUsername(loginDto.getUsername())) {
-                return responseHandler.responseBack(null, null, Messages.UPWRONG.toString(), HttpStatus.BAD_REQUEST);
+                return responseHandler.responseBack(null, null, Messages.UP_WRONG.toString(), HttpStatus.BAD_REQUEST);
             }
             Map<String, String> map = new HashMap<>();
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
@@ -80,7 +80,7 @@ public class UserService {
             return responseHandler.responseBack(map, Messages.WELLCOME.toString(), null, HttpStatus.OK);
         } catch (Exception e) {
             if (e instanceof BadCredentialsException) {
-                return responseHandler.responseBack(null, null, Messages.UPWRONG.toString(), HttpStatus.BAD_REQUEST);
+                return responseHandler.responseBack(null, null, Messages.UP_WRONG.toString(), HttpStatus.BAD_REQUEST);
             }
             return responseHandler.responseBack(null, null, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }

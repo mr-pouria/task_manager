@@ -3,8 +3,8 @@ package ir.tasktop.taskTop.utils;
 public enum Messages {
 
     WELLCOME("خوش آمدید"),
-    UPWRONG("نام کاربری یا رمز عبور نادرست است"),
-    UALREADYEXISTS("نام کاربری قبلا ثبت شده است");
+    UP_WRONG("نام کاربری یا رمز عبور نادرست است"),
+    U_ALREADYEXISTS("نام کاربری قبلا ثبت شده است");
 
     String lable;
 
