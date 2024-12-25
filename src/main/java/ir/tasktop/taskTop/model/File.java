@@ -6,12 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "files")
-@SequenceGenerator(name = "seq_files",sequenceName = "seq_files" , initialValue = 100 , allocationSize = 100)
+@SequenceGenerator(name = "seq_files",sequenceName = "seq_files" , initialValue = 100 , allocationSize = 1)
 public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE , generator = "seq_files")
@@ -23,11 +24,12 @@ public class File {
     @Column(nullable = false)
     private String fileName;
     @Column(nullable = false)
-    private String pathWithoutFileName;
-    @Column(nullable = false)
-    private String fileSize;
+    private Long fileSize;
     @Column(nullable = false)
     private String docName;
     @Column(nullable = false)
     private Long docIdentifier;
+    @Column(nullable = false)
+    @JoinColumns(@JoinColumn(table = "users" , name = "id"))
+    private Long createdBy;
 }

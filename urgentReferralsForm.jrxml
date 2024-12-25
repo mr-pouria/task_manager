@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.0.final using JasperReports Library version 6.21.0-4f56c4f36cd19e17675219a9ac4692d5f0f13b06  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="urgentReferralsForm" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dc925459-4108-4672-af18-ef34242b41ab">
+	<property name="ireport.zoom" value="1.4641000000000202"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="124"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="main.jrdax"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="documentId" class="java.lang.String"/>
+	<parameter name="IMAGE_PATH" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT fullname,
+       RECEPTION_CAUSE_DESC AS ellat,
+       DOCUMENT_DATE AS paziresh_date,
+       (SELECT LISTAGG(cat.title,',') WITHIN GROUP(ORDER BY cat.title)
+        FROM XSTONE_CATALOG cat
+        WHERE cat.catalog_id IN (SELECT REGEXP_SUBSTR(rcp.DETECTIONIDS,'[^,]+',1,LEVEL)
+                                 FROM HSE_RCP_RECEPTION rcp
+                                 WHERE rcp.reception_id = 1105 CONNECT BY REGEXP_SUBSTR(rcp.DETECTIONIDS,'[^,]+',1,LEVEL) IS NOT NULL
+                                 GROUP BY REGEXP_SUBSTR(rcp.DETECTIONIDS,'[^,]+',1,LEVEL))) as tashkhis,
+             (SELECT LISTAGG(cat.title,',') WITHIN GROUP(ORDER BY cat.title)
+        FROM XSTONE_CATALOG cat
+        WHERE cat.catalog_id IN (SELECT REGEXP_SUBSTR(rcp.RECEPTIONCAUSEIDS,'[^,]+',1,LEVEL)
+                                 FROM HSE_RCP_RECEPTION rcp
+                                 WHERE rcp.reception_id = 1105 CONNECT BY REGEXP_SUBSTR(rcp.RECEPTIONCAUSEIDS,'[^,]+',1,LEVEL) IS NOT NULL
+                                 GROUP BY REGEXP_SUBSTR(rcp.RECEPTIONCAUSEIDS,'[^,]+',1,LEVEL))) as eqdamat,
+
+       
+        CASE
+         WHEN param.VALUE_STRING IS NULL THEN '-'
+         ELSE param.VALUE_STRING
+       END AS eqdamat_pezeshk
+FROM HSE_RCP_RECEPTION rcp
+  LEFT JOIN (SELECT first_name_fa || ' ' || last_name AS fullname,
+                    person_id
+             FROM XSTONE_PERSON per) per ON rcp.person_id = per.person_id
+  LEFT JOIN (SELECT inj.injures_id,
+                    inj.accidents_id,
+                    inj.person_name_id
+             FROM HSE_INJURES inj) inj
+         ON inj.person_name_id = rcp.person_id
+        AND rcp.accident_id = inj.accidents_id
+  LEFT JOIN (SELECT param.parameter_id,
+                    param.DOCUMENT_IDENTIFIER,
+                    param.VALUE_STRING
+             FROM XSTONE_DOCUMENT_PARAM_VALUE param
+             WHERE parameter_id = 847) param ON param.DOCUMENT_IDENTIFIER = inj.injures_id
+             
+ 
+WHERE rcp.reception_id = 1105 
+
+ 
+
+
+GROUP BY fullname , reception_cause_desc, DOCUMENT_DATE , param.VALUE_STRING
+]]>
+	</queryString>
+	<field name="FULLNAME" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="FULLNAME"/>
+		<property name="com.jaspersoft.studio.field.label" value="FULLNAME"/>
+	</field>
+	<field name="ELLAT" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ELLAT"/>
+		<property name="com.jaspersoft.studio.field.label" value="ELLAT"/>
+	</field>
+	<field name="PAZIRESH_DATE" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="PAZIRESH_DATE"/>
+		<property name="com.jaspersoft.studio.field.label" value="PAZIRESH_DATE"/>
+	</field>
+	<field name="TASHKHIS" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="TASHKHIS"/>
+		<property name="com.jaspersoft.studio.field.label" value="TASHKHIS"/>
+	</field>
+	<field name="EQDAMAT" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="EQDAMAT"/>
+		<property name="com.jaspersoft.studio.field.label" value="EQDAMAT"/>
+	</field>
+	<field name="EQDAMAT_PEZESHK" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="EQDAMAT_PEZESHK"/>
+		<property name="com.jaspersoft.studio.field.label" value="EQDAMAT_PEZESHK"/>
+	</field>
+	<pageHeader>
+		<band height="60" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="0" width="554" height="1" uuid="6b43fcd5-2220-44aa-9998-06b14abc59d6"/>
+			</line>
+			<line>
+				<reportElement x="554" y="0" width="1" height="60" uuid="cca23277-b29f-4422-8817-78f6a29334a9"/>
+			</line>
+			<line>
+				<reportElement x="0" y="0" width="1" height="60" uuid="f34918e9-8d34-47f9-b092-82d4d0a76c73"/>
+			</line>
+			<line>
+				<reportElement x="138" y="1" width="1" height="59" uuid="0afd4f4e-66e1-45d2-b136-c5286e2d49a6"/>
+			</line>
+			<line>
+				<reportElement x="412" y="1" width="1" height="59" uuid="0a03b3d0-dcb1-4a4b-aa32-75d87b13f52c"/>
+			</line>
+			<line>
+				<reportElement x="139" y="35" width="273" height="1" uuid="a47b641e-cd30-479c-b7f2-d68d53f3eddf"/>
+			</line>
+			<staticText>
+				<reportElement x="227" y="7" width="100" height="20" uuid="9336e7f9-d888-453b-a855-825c5ff7b9d8"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[فرم ارجاع ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="1" width="137" height="59" uuid="efd333ba-4fca-49e5-9c5b-6b1c6998c1cf"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[KPRC-HEL-FO-020-01]]></text>
+			</staticText>
+			<image>
+				<reportElement positionType="FixRelativeToBottom" x="417" y="8" width="137" height="46" isPrintInFirstWholeBand="true" uuid="759418b1-34a0-48f5-bb3c-71053fb1f2a1"/>
+				<imageExpression><![CDATA[$P{IMAGE_PATH}+"logoKpr.jpg"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="742" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="0" width="555" height="1" uuid="9e810028-e90f-461d-bc22-b6fc1793d1c6"/>
+			</line>
+			<line>
+				<reportElement x="0" y="16" width="554" height="1" uuid="37f6260b-4c0d-45f0-91cc-0322b3bef958"/>
+			</line>
+			<line>
+				<reportElement x="554" y="16" width="1" height="245" uuid="d592cc69-280e-4162-9db8-920aa7900ab7"/>
+			</line>
+			<line>
+				<reportElement x="0" y="17" width="1" height="244" uuid="d9aa2f13-39ef-4872-8505-5687f0ff8e97"/>
+			</line>
+			<staticText>
+				<reportElement x="472" y="51" width="58" height="15" uuid="28086ffc-5150-49e9-9760-04f5c7cdbafc"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[همکار محترم:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="247" y="20" width="58" height="15" uuid="010f7a9c-9484-467e-b02f-cb787a01d134"/>
+				<textElement textAlignment="Center">
+					<font fontName="Tahoma" size="9"/>
+				</textElement>
+				<text><![CDATA[هو الشافی]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="103" y="32" width="55" height="15" uuid="2158dc61-77f1-4096-a093-b4de96b6f69c"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[تاریخ پذیرش:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="495" y="78" width="35" height="15" uuid="f6e8b320-2be7-45d5-b91e-443dbc20b281"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[با سلام]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="431" y="104" width="99" height="15" uuid="4e9ea40d-ea76-4621-a866-46bb33fd357b"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[احتراما بیمار آقای/خانم:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="495" y="130" width="35" height="15" uuid="b61d08a6-398c-45b1-bfeb-0fb60057b944"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[به علت:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="178" width="380" height="15" uuid="d9e1ab46-f561-4bc0-9dcf-350062ed3312"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[جهت معاینه و اقدامات لازم خدمتتان معرفی می گردد ؛ لطفا در موارد زیر اظهار نظر فرمایید:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="99" y="216" width="59" height="15" uuid="14399195-a561-41b1-9ed9-3fa94aa9dbd5"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[امضاء پزشک:]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="261" width="555" height="1" uuid="e8968fb7-40b0-4c9c-997f-447d70d3fbbf"/>
+			</line>
+			<line>
+				<reportElement x="0" y="277" width="555" height="1" uuid="39aca1cd-d69b-4390-9987-cf8d696ef3f2"/>
+			</line>
+			<line>
+				<reportElement x="554" y="278" width="1" height="293" uuid="41c55856-06cd-46ff-891e-9d9b5c34fa87"/>
+			</line>
+			<line>
+				<reportElement x="0" y="278" width="1" height="294" uuid="b91157f2-b3e0-4c20-84db-a3a7600e260a"/>
+			</line>
+			<staticText>
+				<reportElement x="513" y="353" width="35" height="15" uuid="1c102b59-e8d5-4cb5-9fff-157502e33b7b"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[عوارض:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="513" width="59" height="15" uuid="4c402670-200b-4427-b561-c1d057416d4c"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[امضاء پزشک:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="131" y="541" width="26" height="15" uuid="121a89d5-c6b6-4862-8ee4-0f00cd231a0d"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[تاریخ:]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="571" width="555" height="1" uuid="5d184721-05b3-4b6e-a15d-0f47ff48eec6"/>
+			</line>
+			<line>
+				<reportElement x="0" y="589" width="554" height="1" uuid="8c4f09b1-7000-41ba-b69e-77592de12111"/>
+			</line>
+			<line>
+				<reportElement x="554" y="589" width="1" height="137" uuid="1dace947-9f7f-4a17-b2c2-542089a08d2c"/>
+			</line>
+			<line>
+				<reportElement x="0" y="590" width="1" height="136" uuid="b1bd4a75-93a4-43fa-a06a-3b435dffa6b3"/>
+			</line>
+			<line>
+				<reportElement x="1" y="589" width="553" height="1" uuid="38616ce9-4db2-4515-8991-57c1ca728dcc"/>
+			</line>
+			<staticText>
+				<reportElement x="98" y="673" width="59" height="15" uuid="a1c9c90e-3c6e-4066-950f-1a2898338ccb"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[امضاء پزشک:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="131" y="700" width="26" height="15" uuid="6bb1a556-c730-46ac-81f0-0f963ac1bff6"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[تاریخ:]]></text>
+			</staticText>
+			<line>
+				<reportElement x="1" y="725" width="553" height="1" uuid="999a44c9-6e8a-4032-8fcf-11a55e5f564c"/>
+			</line>
+			<staticText>
+				<reportElement x="132" y="726" width="291" height="16" uuid="3d4fbab0-ddf4-43ca-853e-302974468b5a"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="9"/>
+				</textElement>
+				<text><![CDATA[درمانگاه شرکت پتروپالایش کنگان - تلفن : 09175959115]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="139" y="-24" width="273" height="24" uuid="4e6616ba-c447-4b9d-90b1-7da314046c3e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[ Referrals Form]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="280" y="104" width="151" height="15" uuid="557d8230-c665-48a9-923e-fff8237a374c"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{FULLNAME}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="150" y="130" width="345" height="37" uuid="cba7daf4-3336-44d2-a6fd-a8674aeb9037"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ELLAT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="26" y="32" width="77" height="15" uuid="606e31f9-350e-4eac-8085-26d6ed53ac89"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PAZIRESH_DATE}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="4" y="593" width="547" height="73" uuid="fa9f5d6b-97cc-4773-a8d2-9eceb4b9f42c"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<textFieldExpression><![CDATA["خلاصه اقدامات پزشک کلینیک سایت در خصوص بازگشت به کار:" + " " + $F{EQDAMAT_PEZESHK}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="7" y="295" width="541" height="50" uuid="78182526-b1b3-4227-a382-206abac07287"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<textFieldExpression><![CDATA["تشخیص: " + $F{TASHKHIS}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="7" y="426" width="541" height="50" uuid="46d25475-7191-4ad9-9641-5c22080e788f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<textFieldExpression><![CDATA["اقدامات درمانی: " + $F{EQDAMAT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>
