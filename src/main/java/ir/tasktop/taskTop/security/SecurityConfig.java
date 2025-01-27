@@ -35,11 +35,9 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
 
                 .addFilterBefore(authTokenFilter , UsernamePasswordAuthenticationFilter.class)
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/login","/api/register")
-                        .permitAll()
-                        .requestMatchers("/api/public/**")
+                        .requestMatchers("/api/login","/api/register","/api/public")
                         .permitAll()
                         .requestMatchers( "/api/releaseNewFeature").hasRole("ADMIN")
                         .anyRequest()
