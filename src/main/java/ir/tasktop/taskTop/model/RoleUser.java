@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class RoleUser {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_roles_user")
-    private Long id;
+    private Long roleUserId;
 
     private Long user_id;
     private Long role_id;

@@ -24,15 +24,21 @@ import java.util.List;
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seq_users")
-    private Long id;
+    private Long userId;
     @Column(unique = true , nullable = false)
     private String username;
+    @Column(unique = true , nullable = false)
+    private String phoneNumber;
     private String password;
     private String firstName;
     private String lastName;
     @ManyToMany(fetch = FetchType.EAGER , cascade = CascadeType.REMOVE)
-    @JoinTable(name = "roles_user")
+    @JoinTable(name = "roles_user" , joinColumns = @JoinColumn(name = "user_id") , inverseJoinColumns = @JoinColumn(name = "role_id"))
     private List<Role> role;
+
+    @ManyToMany(fetch = FetchType.EAGER , cascade = CascadeType.REMOVE)
+    @JoinTable(name = "validation_code_users" , joinColumns = @JoinColumn(name = "user_id") , inverseJoinColumns = @JoinColumn(name = "validation_code_id"))
+    private List<ValidationCode> validationCode;
 
 
 

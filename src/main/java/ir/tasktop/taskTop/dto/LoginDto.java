@@ -2,12 +2,13 @@ package ir.tasktop.taskTop.dto;
 
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class LoginDto {
-    @NotBlank(message = "پر کردن نام کاربری الزامی است")
-    private String username;
-    @NotBlank(message = "پر کردن رمز عبور الزامی است")
+    @NotBlank(message = "شماره موبایل الزامی است")
+    private String phoneNumber;
+    @NotBlank(message = "رمز عبور الزامی است")
     private String password;
 }

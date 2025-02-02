@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .addFilterBefore(authTokenFilter , UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/login","/api/register","/api/public")
+                        .requestMatchers("/api/login","/api/register","/api/sendCode" , "/api/checkRegisterOrNot" , "/api/checkValidationCode")
                         .permitAll()
                         .requestMatchers( "/api/releaseNewFeature").hasRole("ADMIN")
                         .anyRequest()

@@ -9,9 +9,9 @@ import lombok.Data;
 
 @Data
 public class RegisterDto {
-    @NotBlank(message = "پر کردن نام کاربری الزامی است")
-    @Size(min =  3 , max = 15, message = "برای نام کاربری حداقل 3 کرکتر و حداکثر 15 کرکتر مجاز است")
-    private String username;
+    @NotBlank(message = "شماره موبایل نامعتبر است")
+    @Size(min =  11 , max = 11, message = "شماره موبایل نامعتبر است")
+    private String phoneNumber;
     @NotBlank(message = "پر کردن رمز عبور الزامی است")
     private String password;
     @NotBlank(message = "پر کردن نام الزامی است")

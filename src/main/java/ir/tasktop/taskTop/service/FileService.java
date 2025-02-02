@@ -42,7 +42,7 @@ public class FileService {
         file.setFileName(filename);
         file.setFileExtension(saveFileDto.getFile().getOriginalFilename().substring(saveFileDto.getFile().getOriginalFilename().lastIndexOf(".") + 1));
         file.setFileSize(saveFileDto.getFile().getSize());
-        file.setCreatedBy(userRepo.findByUsername(username).get().getId());
+        file.setCreatedBy(userRepo.findByUsername(username).get().getUserId());
         file.setDocName(saveFileDto.getDocName());
         file.setDocIdentifier(saveFileDto.getDocIdentifier());
         Path path = Paths.get(uploadDir + filename + "." + file.getFileExtension());

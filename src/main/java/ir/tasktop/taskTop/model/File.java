@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE , generator = "seq_files")
-    private Long id;
+    private Long fileId;
     @Column(nullable = false)
     private String path;
     @Column(nullable = false)
@@ -30,6 +30,6 @@ public class File {
     @Column(nullable = false)
     private Long docIdentifier;
     @Column(nullable = false)
-    @JoinColumns(@JoinColumn(table = "users" , name = "id"))
+    @JoinColumns(@JoinColumn(table = "users" , name = "user_id"))
     private Long createdBy;
 }

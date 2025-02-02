@@ -17,7 +17,7 @@ import java.util.Date;
 public class Feature {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE , generator = "seq_feature")
-    private Long id;
+    private Long featureId;
     @Column(nullable = false , unique = true)
     private String name;
     private String description;
