@@ -11,6 +11,7 @@ import ir.tasktop.taskTop.repo.ValidatedPhoneNumberRepo;
 import ir.tasktop.taskTop.repo.ValidationCodeRepo;
 import ir.tasktop.taskTop.repo.ValidationCodeUserRepo;
 import ir.tasktop.taskTop.security.Jwt;
+import ir.tasktop.taskTop.utils.EncryptionHandler;
 import ir.tasktop.taskTop.utils.Messages;
 import ir.tasktop.taskTop.utils.ResponseHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +24,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 
+import java.security.Key;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -59,19 +65,27 @@ public class UserService {
     @Autowired
     ValidatedPhoneNumberRepo validatedPhoneNumberRepo;
 
-    public ResponseEntity<?> register(RegisterDto registerDto, BindingResult result) {
+    Key key;
+
+    public ResponseEntity<?> register(RegisterDto registerDto, BindingResult result) throws Exception {
 
 
         if (result.hasErrors()) {
             return responseHandler.responseBack(null, null, result.getFieldError().getDefaultMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
+
+        String[] hash = EncryptionHandler.decrypt(registerDto.getHashCode() , key).split("\\|");
+        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
+        Long diff = (timestamp.getTime() - Long.parseLong(hash[1])) / 1000;
+        if (!registerDto.getPhoneNumber().equals(hash[0]) || diff >= 120) {
+            return responseHandler.responseBack(null, null, "خطا در احراز هویت , مجدد تلاش کنید", HttpStatus.BAD_REQUEST);
+        }
+
+
         if (userRepo.existsUserByPhoneNumber(registerDto.getPhoneNumber())) {
             return responseHandler.responseBack(null, null, Messages.U_ALREADYEXISTS.toString(), HttpStatus.BAD_REQUEST);
         }
 
-        if (!validatedPhoneNumberRepo.existsByPhoneNumber(registerDto.getPhoneNumber())) {
-            return responseHandler.responseBack(null, null,Messages.AUTHENTICATION_FAILED.toString(), HttpStatus.NOT_ACCEPTABLE);
-        }
         User user = new User();
         user.setUsername(registerDto.getPhoneNumber());
         user.setPhoneNumber(registerDto.getPhoneNumber());
@@ -160,8 +174,31 @@ public class UserService {
             }
 
         }
-        ;
+
+
         String postDate = validationCodeRepo.findLatestRecord(sendCodeDto.getPhoneNumber());
+        if (postDate == null) {
+            ValidationCode validationCode = new ValidationCode();
+            ValidationCodeUser validationCodeUser = new ValidationCodeUser();
+            Long userId = userRepo.getUserByPhoneNumber(sendCodeDto.getPhoneNumber()).getUserId();
+            Random random = new Random();
+            int number = 100000 + (int) (Math.random() * (999999 - 100000));
+
+            validationCode.setCode(String.valueOf(number));
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter nowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            try {
+                validationCode.setPostDate(now.format(nowFormatter));
+                ValidationCode vCode = validationCodeRepo.save(validationCode);
+                validationCodeUser.setValidation_code_id(vCode.getValidationCodeId());
+                validationCodeUser.setUser_id(userId);
+                validationCodeUserRepo.save(validationCodeUser);
+                return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد", null ,HttpStatus.OK);
+            } catch (Exception e) {
+                return responseHandler.responseBack(null, null,  Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime localDateTime = LocalDateTime.now();
         LocalDateTime localPostDate = LocalDateTime.parse(postDate, formatter);
@@ -171,7 +208,7 @@ public class UserService {
         }
         ValidationCode validationCode = new ValidationCode();
         ValidationCodeUser validationCodeUser = new ValidationCodeUser();
-        Long userId = userRepo.getUserByPhoneNumber(sendCodeDto.getPhoneNumber()).getFirst().getUserId();
+        Long userId = userRepo.getUserByPhoneNumber(sendCodeDto.getPhoneNumber()).getUserId();
         Random random = new Random();
         int number = 100000 + (int) (Math.random() * (999999 - 100000));
 
@@ -185,14 +222,27 @@ public class UserService {
             validationCodeUser.setValidation_code_id(vCode.getValidationCodeId());
             validationCodeUser.setUser_id(userId);
             validationCodeUserRepo.save(validationCodeUser);
-            return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد", null ,HttpStatus.BAD_REQUEST);
+            return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد", null ,HttpStatus.OK);
         } catch (Exception e) {
             return responseHandler.responseBack(null, null,  Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }
 
-    public ResponseEntity<?> checkValidationCode(CheckValidationCodeDto checkValidationCodeDto, BindingResult result) {
+    public ResponseEntity<?> resetPassword(ResetPasswordDto resetPasswordDto, BindingResult result) throws Exception {
+        String[] hashCode = EncryptionHandler.decrypt(resetPasswordDto.getHashCode(),key).split("\\|");
+        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
+        Long diff = (Long.parseLong(hashCode[1]) - timestamp.getTime()) / 1000;
+
+        if (!resetPasswordDto.getPhoneNumber().equals(hashCode[0]) || diff >= 10) {
+            return responseHandler  .responseBack(null, null, "خطا در احراز هویت , مجدد تلاش کنید", HttpStatus.BAD_REQUEST);
+        }
+        String newPassword = passwordEncoder.encode(resetPasswordDto.getNewPassword());
+        userRepo.resetPassword(resetPasswordDto.getPhoneNumber() , newPassword);
+        return responseHandler.responseBack(null, "رمز عبور با موفقیت تغییر یافت", null, HttpStatus.OK);
+    }
+
+    public ResponseEntity<?> checkValidationCode(CheckValidationCodeDto checkValidationCodeDto, BindingResult result) throws Exception {
         if (result.hasErrors()) {
             return responseHandler.responseBack(null, null, result.getFieldError().getDefaultMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -215,14 +265,15 @@ public class UserService {
                     validatedPhoneNumber.setPhoneNumber(checkValidationCodeDto.getPhoneNumber());
                     validatedPhoneNumber.setCreated_at(now.format(nowFormatter));
                     try {
-                        validatedPhoneNumberRepo.save(validatedPhoneNumber);
-                        Map<String, Boolean> map = new HashMap<>();
-                        map.put("canRegister", true);
+                        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
+                        String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber()) + "|" + String.valueOf(timestamp.getTime());
+                        String hashCode = EncryptionHandler.encrypt(feed);
+                        key = EncryptionHandler.key;
+                        Map<String, String> map = new HashMap<>();
+                        map.put("hashCode", hashCode);
                         return responseHandler.responseBack(map, null, null, HttpStatus.OK);
                     } catch (Exception e) {
-                        Map<String, Boolean> map = new HashMap<>();
-                        map.put("canRegister", false);
-                        return responseHandler.responseBack(map, "", Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+                        return responseHandler.responseBack(null, "", Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
                     }
                 } else {
                     return responseHandler.responseBack(null, null, Messages.V_CODE_EXPIRED.toString(), HttpStatus.BAD_REQUEST);
@@ -243,9 +294,13 @@ public class UserService {
                 return responseHandler.responseBack(null, null, Messages.V_CODE_EXPIRED.toString(), HttpStatus.BAD_REQUEST);
             }
             String vCode = validationCodeRepo.findLatestRecordWithCode(checkValidationCodeDto.getPhoneNumber());
-            if (vCode == checkValidationCodeDto.getCode()) {
-                Map<String, Boolean> map = new HashMap<>();
-                map.put("canRegister", true);
+            if (checkValidationCodeDto.getCode().equals(vCode)) {
+                Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
+                String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber()) + "|" + String.valueOf(timestamp.getTime());
+                String hashCode = EncryptionHandler.encrypt(feed);
+                key = EncryptionHandler.key;
+                Map<String, String> map = new HashMap<>();
+                map.put("hashCode", hashCode);
                 return responseHandler.responseBack(map, null, null, HttpStatus.OK);
             }
         } else {
@@ -253,4 +308,5 @@ public class UserService {
         }
         return responseHandler.responseBack(null, null,  Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
 }

@@ -20,4 +20,6 @@ public class RegisterDto {
     @NotBlank(message = "پر کردن نام خانوادگی الزامی است")
     @Size(min = 3 , max = 20, message = "برای نام خانوادگی حداقل 3 کرکتر و حداکثر 20 کرکتر مجاز است")
     private String lastName;
+    @NotBlank(message = "خطا در احراز هویت")
+    private String hashCode;
 }

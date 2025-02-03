@@ -3,11 +3,10 @@ package ir.tasktop.taskTop.controller;
 
 import ir.tasktop.taskTop.dto.*;
 import ir.tasktop.taskTop.service.UserService;
-import ir.tasktop.taskTop.utils.Messages;
 import ir.tasktop.taskTop.utils.ResponseHandler;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +30,7 @@ public class UserController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterDto registerDto , BindingResult bindingResult) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterDto registerDto , BindingResult bindingResult) throws Exception {
        return userService.register(registerDto , bindingResult);
     }
 
@@ -48,9 +47,14 @@ public class UserController {
     }
 
     @PostMapping("/checkValidationCode")
-    public ResponseEntity<?> checkValidationCode(@Valid @RequestBody CheckValidationCodeDto checkValidationCodeDto, BindingResult bindingResult) {
+    public ResponseEntity<?> checkValidationCode(@Valid @RequestBody CheckValidationCodeDto checkValidationCodeDto, BindingResult bindingResult) throws Exception {
         return userService.checkValidationCode(checkValidationCodeDto , bindingResult);
     }
 
+    @Transactional()
+    @PostMapping("/resetPassword")
+    public ResponseEntity<?> resetUserPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto , BindingResult bindingResult) throws Exception {
+        return userService.resetPassword(resetPasswordDto , bindingResult);
+    }
 
 }

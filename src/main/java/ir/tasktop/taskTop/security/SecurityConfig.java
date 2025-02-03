@@ -1,8 +1,11 @@
 package ir.tasktop.taskTop.security;
+
 import ir.tasktop.taskTop.service.CustomUserDetailService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -26,22 +29,29 @@ public class SecurityConfig {
     AuthTokenFilter authTokenFilter;
 
 
-
     @Autowired
     CustomUserDetailService customUserDetailService;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
+        return http.csrf(AbstractHttpConfigurer::disable).cors(Customizer.withDefaults())
 
-                .addFilterBefore(authTokenFilter , UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/login","/api/register","/api/sendCode" , "/api/checkRegisterOrNot" , "/api/checkValidationCode")
+                        .requestMatchers("/api/login", "/api/register", "/api/sendCode", "/api/checkRegisterOrNot", "/api/checkValidationCode", "/api/resetPassword")
                         .permitAll()
-                        .requestMatchers( "/api/releaseNewFeature").hasRole("ADMIN")
+                        .requestMatchers("/api/releaseNewFeature").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())
+                .exceptionHandling(ex ->
+                ex.authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                })
+
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                response.setStatus(HttpStatus.FORBIDDEN.value());})
+                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
@@ -66,8 +76,6 @@ public class SecurityConfig {
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
-
-
 
 
 }
