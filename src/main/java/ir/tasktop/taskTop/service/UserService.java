@@ -3,11 +3,9 @@ package ir.tasktop.taskTop.service;
 
 import ir.tasktop.taskTop.dto.*;
 import ir.tasktop.taskTop.model.User;
-import ir.tasktop.taskTop.model.ValidatedPhoneNumber;
 import ir.tasktop.taskTop.model.ValidationCode;
 import ir.tasktop.taskTop.model.ValidationCodeUser;
 import ir.tasktop.taskTop.repo.UserRepo;
-import ir.tasktop.taskTop.repo.ValidatedPhoneNumberRepo;
 import ir.tasktop.taskTop.repo.ValidationCodeRepo;
 import ir.tasktop.taskTop.repo.ValidationCodeUserRepo;
 import ir.tasktop.taskTop.security.Jwt;
@@ -15,6 +13,7 @@ import ir.tasktop.taskTop.utils.EncryptionHandler;
 import ir.tasktop.taskTop.utils.Messages;
 import ir.tasktop.taskTop.utils.ResponseHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,18 +22,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
+import reactor.core.publisher.Mono;
 
 import java.security.Key;
-import java.sql.Time;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -63,9 +58,10 @@ public class UserService {
 
 
     @Autowired
-    ValidatedPhoneNumberRepo validatedPhoneNumberRepo;
+    SmsRequestService smsRequestService;
 
     Key key;
+
 
     public ResponseEntity<?> register(RegisterDto registerDto, BindingResult result) throws Exception {
 
@@ -145,6 +141,7 @@ public class UserService {
         if (result.hasErrors()) {
             return responseHandler.responseBack(null, null, result.getFieldError().getDefaultMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
+
         if (!userRepo.existsUserByPhoneNumber(sendCodeDto.getPhoneNumber())) {
             String postDate = validationCodeRepo.findLatestRecordByNotRegisteredPhoneNumber(sendCodeDto.getPhoneNumber());
             if (postDate != null) {
@@ -156,19 +153,19 @@ public class UserService {
                     return responseHandler.responseBack(null, Messages.SENT_BEFORE.toString(),null, HttpStatus.OK);
                 }
             }
-
-
             ValidationCode validationCode = new ValidationCode();
             Random random = new Random();
             int number = 100000 + (int) (Math.random() * (999999 - 100000));
-            validationCode.setCode(String.valueOf(number));
+            String hashedNumber = passwordEncoder.encode(String.valueOf(number));
+            validationCode.setCode(hashedNumber);
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter nowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             validationCode.setPostDate(now.format(nowFormatter));
             validationCode.setNotRegisteredPhoneNumber(sendCodeDto.getPhoneNumber());
             try {
                 ValidationCode vCode = validationCodeRepo.save(validationCode);
-                return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد",null, HttpStatus.OK);
+                 smsRequestService.postRequest(sendCodeDto.getPhoneNumber(), String.valueOf(number)).block();
+                 return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد",null, HttpStatus.OK);
             } catch (Exception e) {
                 return responseHandler.responseBack(null, null,  Messages.INTERNAL_SERVER_ERROR.toString() , HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -177,42 +174,22 @@ public class UserService {
 
 
         String postDate = validationCodeRepo.findLatestRecord(sendCodeDto.getPhoneNumber());
-        if (postDate == null) {
-            ValidationCode validationCode = new ValidationCode();
-            ValidationCodeUser validationCodeUser = new ValidationCodeUser();
-            Long userId = userRepo.getUserByPhoneNumber(sendCodeDto.getPhoneNumber()).getUserId();
-            Random random = new Random();
-            int number = 100000 + (int) (Math.random() * (999999 - 100000));
-
-            validationCode.setCode(String.valueOf(number));
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter nowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-            try {
-                validationCode.setPostDate(now.format(nowFormatter));
-                ValidationCode vCode = validationCodeRepo.save(validationCode);
-                validationCodeUser.setValidation_code_id(vCode.getValidationCodeId());
-                validationCodeUser.setUser_id(userId);
-                validationCodeUserRepo.save(validationCodeUser);
-                return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد", null ,HttpStatus.OK);
-            } catch (Exception e) {
-                return responseHandler.responseBack(null, null,  Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+        if (postDate != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime localDateTime = LocalDateTime.now();
+            LocalDateTime localPostDate = LocalDateTime.parse(postDate, formatter);
+            Duration duration = Duration.between(localPostDate, localDateTime);
+            if (duration.toSeconds() < 120) {
+                return responseHandler.responseBack(null,  Messages.SENT_BEFORE.toString(), null , HttpStatus.OK);
             }
-        }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime localDateTime = LocalDateTime.now();
-        LocalDateTime localPostDate = LocalDateTime.parse(postDate, formatter);
-        Duration duration = Duration.between(localPostDate, localDateTime);
-        if (duration.toSeconds() < 120) {
-            return responseHandler.responseBack(null,  Messages.SENT_BEFORE.toString(), null , HttpStatus.OK);
         }
         ValidationCode validationCode = new ValidationCode();
         ValidationCodeUser validationCodeUser = new ValidationCodeUser();
         Long userId = userRepo.getUserByPhoneNumber(sendCodeDto.getPhoneNumber()).getUserId();
         Random random = new Random();
         int number = 100000 + (int) (Math.random() * (999999 - 100000));
-
-        validationCode.setCode(String.valueOf(number));
+        String hashedNumber = passwordEncoder.encode(String.valueOf(number));
+        validationCode.setCode(hashedNumber);
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter nowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -222,6 +199,7 @@ public class UserService {
             validationCodeUser.setValidation_code_id(vCode.getValidationCodeId());
             validationCodeUser.setUser_id(userId);
             validationCodeUserRepo.save(validationCodeUser);
+            smsRequestService.postRequest(sendCodeDto.getPhoneNumber(), String.valueOf(number)).block();
             return responseHandler.responseBack(null,  "کد تایید به شماره " + sendCodeDto.getPhoneNumber() + " ارسال شد , این کد تنها 2 دقیقه اعتبار دارد", null ,HttpStatus.OK);
         } catch (Exception e) {
             return responseHandler.responseBack(null, null,  Messages.INTERNAL_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -232,10 +210,10 @@ public class UserService {
     public ResponseEntity<?> resetPassword(ResetPasswordDto resetPasswordDto, BindingResult result) throws Exception {
         String[] hashCode = EncryptionHandler.decrypt(resetPasswordDto.getHashCode(),key).split("\\|");
         Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-        Long diff = (Long.parseLong(hashCode[1]) - timestamp.getTime()) / 1000;
+        Long diff = (timestamp.getTime() - Long.parseLong(hashCode[1])) / 1000;
 
-        if (!resetPasswordDto.getPhoneNumber().equals(hashCode[0]) || diff >= 10) {
-            return responseHandler  .responseBack(null, null, "خطا در احراز هویت , مجدد تلاش کنید", HttpStatus.BAD_REQUEST);
+        if (!resetPasswordDto.getPhoneNumber().equals(hashCode[0]) || diff >= 120) {
+            return responseHandler.responseBack(null, null, "خطا در احراز هویت , مجدد تلاش کنید", HttpStatus.BAD_REQUEST);
         }
         String newPassword = passwordEncoder.encode(resetPasswordDto.getNewPassword());
         userRepo.resetPassword(resetPasswordDto.getPhoneNumber() , newPassword);
@@ -254,16 +232,12 @@ public class UserService {
                 LocalDateTime localDateTime = LocalDateTime.now();
                 LocalDateTime localPostDate = LocalDateTime.parse(postDate, formatter);
                 Duration duration = Duration.between(localPostDate, localDateTime);
-
                 if (duration.toSeconds() > 120) {
                     return responseHandler.responseBack(null, null, Messages.V_CODE_EXPIRED.toString(), HttpStatus.BAD_REQUEST);
                 }
-                else if (checkValidationCodeDto.getCode().equals(vCode)) {
+                else if (passwordEncoder.matches(checkValidationCodeDto.getCode() , vCode)) {
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter nowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    ValidatedPhoneNumber validatedPhoneNumber = new ValidatedPhoneNumber();
-                    validatedPhoneNumber.setPhoneNumber(checkValidationCodeDto.getPhoneNumber());
-                    validatedPhoneNumber.setCreated_at(now.format(nowFormatter));
                     try {
                         Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
                         String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber()) + "|" + String.valueOf(timestamp.getTime());
@@ -294,7 +268,7 @@ public class UserService {
                 return responseHandler.responseBack(null, null, Messages.V_CODE_EXPIRED.toString(), HttpStatus.BAD_REQUEST);
             }
             String vCode = validationCodeRepo.findLatestRecordWithCode(checkValidationCodeDto.getPhoneNumber());
-            if (checkValidationCodeDto.getCode().equals(vCode)) {
+            if (passwordEncoder.matches(checkValidationCodeDto.getCode() , vCode)) {
                 Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
                 String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber()) + "|" + String.valueOf(timestamp.getTime());
                 String hashCode = EncryptionHandler.encrypt(feed);
