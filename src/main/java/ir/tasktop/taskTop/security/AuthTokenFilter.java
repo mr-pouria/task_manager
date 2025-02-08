@@ -91,7 +91,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
             final String jwt = authHeader.substring(7);
-            final String username = jwtService.getUsernameByToken(jwt);
+            final String username = jwtService.getPayloadByToken(jwt);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

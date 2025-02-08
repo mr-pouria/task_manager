@@ -60,7 +60,6 @@ public class UserService {
     @Autowired
     SmsRequestService smsRequestService;
 
-    Key key;
 
 
     public ResponseEntity<?> register(RegisterDto registerDto, BindingResult result) throws Exception {
@@ -70,10 +69,7 @@ public class UserService {
             return responseHandler.responseBack(null, null, result.getFieldError().getDefaultMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        String[] hash = EncryptionHandler.decrypt(registerDto.getHashCode() , key).split("\\|");
-        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-        Long diff = (timestamp.getTime() - Long.parseLong(hash[1])) / 1000;
-        if (!registerDto.getPhoneNumber().equals(hash[0]) || diff >= 120) {
+        if (!jwt.validateToken(registerDto.getHashCode())) {
             return responseHandler.responseBack(null, null, "خطا در احراز هویت , مجدد تلاش کنید", HttpStatus.BAD_REQUEST);
         }
 
@@ -83,8 +79,8 @@ public class UserService {
         }
 
         User user = new User();
-        user.setUsername(registerDto.getPhoneNumber());
-        user.setPhoneNumber(registerDto.getPhoneNumber());
+        user.setUsername(jwt.getPayloadByToken(registerDto.getHashCode()));
+        user.setPhoneNumber(jwt.getPayloadByToken(registerDto.getHashCode()));
         user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
         user.setFirstName(registerDto.getFirstName());
         user.setLastName(registerDto.getLastName());
@@ -208,11 +204,8 @@ public class UserService {
     }
 
     public ResponseEntity<?> resetPassword(ResetPasswordDto resetPasswordDto, BindingResult result) throws Exception {
-        String[] hashCode = EncryptionHandler.decrypt(resetPasswordDto.getHashCode(),key).split("\\|");
-        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-        Long diff = (timestamp.getTime() - Long.parseLong(hashCode[1])) / 1000;
 
-        if (!resetPasswordDto.getPhoneNumber().equals(hashCode[0]) || diff >= 120) {
+        if (!jwt.validateToken(resetPasswordDto.getHashCode())) {
             return responseHandler.responseBack(null, null, "خطا در احراز هویت , مجدد تلاش کنید", HttpStatus.BAD_REQUEST);
         }
         String newPassword = passwordEncoder.encode(resetPasswordDto.getNewPassword());
@@ -239,10 +232,8 @@ public class UserService {
                     LocalDateTime now = LocalDateTime.now();
                     DateTimeFormatter nowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                     try {
-                        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-                        String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber()) + "|" + String.valueOf(timestamp.getTime());
-                        String hashCode = EncryptionHandler.encrypt(feed);
-                        key = EncryptionHandler.key;
+                        String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber());
+                        String hashCode = jwt.generateToken(feed);
                         Map<String, String> map = new HashMap<>();
                         map.put("hashCode", hashCode);
                         return responseHandler.responseBack(map, null, null, HttpStatus.OK);
@@ -269,10 +260,8 @@ public class UserService {
             }
             String vCode = validationCodeRepo.findLatestRecordWithCode(checkValidationCodeDto.getPhoneNumber());
             if (passwordEncoder.matches(checkValidationCodeDto.getCode() , vCode)) {
-                Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-                String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber()) + "|" + String.valueOf(timestamp.getTime());
-                String hashCode = EncryptionHandler.encrypt(feed);
-                key = EncryptionHandler.key;
+                String feed = String.valueOf(checkValidationCodeDto.getPhoneNumber());
+                String hashCode = jwt.generateToken(feed);
                 Map<String, String> map = new HashMap<>();
                 map.put("hashCode", hashCode);
                 return responseHandler.responseBack(map, null, null, HttpStatus.OK);

@@ -29,16 +29,16 @@ public class Jwt {
         return null;
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String feed) {
         return Jwts.builder()
-                .subject(username)
+                .subject(feed)
                 .signWith(key())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .compact();
     }
 
-    public String getUsernameByToken(String token) {
+    public String getPayloadByToken(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) key())
                 .build()
